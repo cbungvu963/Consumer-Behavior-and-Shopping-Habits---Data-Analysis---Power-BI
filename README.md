@@ -1,5 +1,8 @@
-Introduction
+![image alt](https://github.com/cbungvu963/Consumer-Behavior-and-Shopping-Habits---Data-Analysis---Power-BI/blob/dc9e81218fe2c9ff7a294ec6222ab33152d376cf/Overview%20Dashboard.png)
 
+![image alt](https://github.com/cbungvu963/Consumer-Behavior-and-Shopping-Habits---Data-Analysis---Power-BI/blob/dc9e81218fe2c9ff7a294ec6222ab33152d376cf/Customer%20Detail.png)
+
+![image alt](https://github.com/cbungvu963/Consumer-Behavior-and-Shopping-Habits---Data-Analysis---Power-BI/blob/dc9e81218fe2c9ff7a294ec6222ab33152d376cf/Map.png)
 This project focuses on analyzing customer shopping behavior using the shopping_trends.csv dataset to uncover consumption patterns and trends. The process includes data import, cleaning, modeling using the Star Schema approach, creating DAX measures for analysis, identifying key insights, and visualizing data in Power BI. The goal is to deliver a professional report to support business decision-making, such as optimizing promotions, segmenting customers, and analyzing seasonal or regional trends.
 1. Data Import and Cleaning
 1.1 Data Import
