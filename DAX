@@ -1,0 +1,202 @@
+0. Comparison with the Results of the Previous Month
+
+
+0. One_Previous_Month_Quantity_of_item = 
+VAR CurrentStartOfMonth = MAX('Calendar'[Start_of_Month])
+VAR PreviousMonthStart = DATE(YEAR(CurrentStartOfMonth), MONTH(CurrentStartOfMonth) - 1, 1)
+VAR PreviousMonthEnd = EOMONTH(PreviousMonthStart, 0)
+RETURN
+CALCULATE(
+    [Quantity_of_items],
+    FILTER(
+        ALL('shopping_trends'),
+        'shopping_trends'[SalesDate] >= PreviousMonthStart &&
+        'shopping_trends'[SalesDate] <= PreviousMonthEnd
+    )
+)
+
+0. Quantity_of_items = 
+VAR CurrentStartOfMonth = MAX('Calendar'[Start_of_Month])
+VAR CurrentMonthEnd = EOMONTH(CurrentStartOfMonth, 0)
+RETURN
+CALCULATE(
+    COUNT('shopping_trends'[Item Purchased]),
+    FILTER(
+        ALL('shopping_trends'),
+        'shopping_trends'[SalesDate] >= CurrentStartOfMonth &&
+        'shopping_trends'[SalesDate] <= CurrentMonthEnd
+    )
+)
+
+0. Total_Sales = 
+VAR CurrentStartOfMonth = MAX('Calendar'[Start_of_Month])
+VAR CurrentMonthEnd = EOMONTH(CurrentStartOfMonth, 0)
+RETURN
+CALCULATE(
+    SUM('shopping_trends'[Purchase Amount (USD)]),
+    FILTER(
+        ALL('shopping_trends'),
+        'shopping_trends'[SalesDate] >= CurrentStartOfMonth &&
+        'shopping_trends'[SalesDate] <= CurrentMonthEnd
+    )
+)
+
+0.One_Previous_Month_Sales = 
+VAR CurrentStartOfMonth = MAX('Calendar'[Start_of_Month])
+VAR PreviousMonthStart = DATE(YEAR(CurrentStartOfMonth), MONTH(CurrentStartOfMonth) - 1, 1)
+VAR PreviousMonthEnd = EOMONTH(PreviousMonthStart, 0)
+RETURN
+CALCULATE(
+    [Total Sales],
+    FILTER(
+        ALL('shopping_trends'),
+        DATEVALUE('shopping_trends'[SalesDate]) >= PreviousMonthStart &&
+        DATEVALUE('shopping_trends'[SalesDate]) <= PreviousMonthEnd
+    )
+)
+
+#############################################################################################################################
+1. Promotion and Discount Effectiveness Analysis
+Avg Purchase with Promo = CALCULATE(AVERAGE(shopping_trends[Purchase Amount (USD)]), shopping_trends[Promo Code Used] = "Yes")
+
+Avg Purchase without Promo = CALCULATE(AVERAGE(shopping_trends[Purchase Amount (USD)]), shopping_trends[Promo Code Used] = "No")
+
+Percentage Sales with Discount = DIVIDE([Sales with Discount], [Total Sales],0)
+
+Percentage Sales with Promo Code = DIVIDE([Sales with Promo Code], [Total Sales],0)
+
+Promo Lift = [Avg Purchase with Promo] - [Avg Purchase without Promo]
+
+Sales with Discount = CALCULATE([Total Sales], shopping_trends[Discount Applied] = "Yes")
+
+Sales with Promo Code = CALCULATE([Total Sales], shopping_trends[Promo Code Used] = "Yes")
+
+Total Sales = SUM(shopping_trends[Purchase Amount (USD)])
+
+
+
+#############################################################################################################################
+2. Product Reviews and Quality Analysis
+
+Average Review Rating = AVERAGE(shopping_trends[Review Rating])
+
+Average Review Rating with Discount = CALCULATE([Average Review Rating], shopping_trends[Discount Applied] = "Yes")
+
+Average Review Rating without Discount = CALCULATE([Average Review Rating], shopping_trends[Discount Applied] = "No")
+
+
+#############################################################################################################################
+3. Seasonality and Trend Analysis
+
+Average Seasonal Sales = 
+    VAR Seasons = DISTINCT(shopping_trends[Season])
+    VAR TotalPerSeason = ADDCOLUMNS(
+        Seasons, 
+        "Sales", 
+        CALCULATE(
+            SUM(shopping_trends[Purchase Amount (USD)]), 
+            ALLEXCEPT(shopping_trends, shopping_trends[Season])
+        )
+    )
+    RETURN AVERAGEX(TotalPerSeason, [Sales])
+
+Sales by Season = SUM(shopping_trends[Purchase Amount (USD)])
+
+Seasonal Sales Index = DIVIDE([Total Sales], [Average Seasonal Sales], 1)
+
+#############################################################################################################################
+4. Customer Behavior and Segmentation Analysis
+
+Average Purchase by Age Group = 
+    AVERAGEX(
+        FILTER(shopping_trends, shopping_trends[Age] >= 18 && shopping_trends[Age] <= 25), 
+        shopping_trends[Purchase Amount (USD)]
+    )
+
+Average Purchase by Gender = AVERAGE(shopping_trends[Purchase Amount (USD)])
+
+High-Value Customers = 
+CALCULATE(
+    COUNTROWS(
+        FILTER(
+            ADDCOLUMNS(
+                SUMMARIZE(shopping_trends, shopping_trends[Customer ID]),
+                "TotalSpend", CALCULATE(SUM(shopping_trends[Purchase Amount (USD)]))
+            ),
+            [TotalSpend] > 90
+        )
+    )
+)
+
+
+Low-Value Customers = 
+CALCULATE(
+    COUNTROWS(
+        FILTER(
+            ADDCOLUMNS(
+                SUMMARIZE(shopping_trends, shopping_trends[Customer ID]),
+                "TotalSpend", CALCULATE(SUM(shopping_trends[Purchase Amount (USD)]))
+            ),
+            [TotalSpend] <= 90
+        )
+    ))
+
+One-time Customers = 
+CALCULATE(
+    COUNTROWS(
+        FILTER(
+            ADDCOLUMNS(
+                SUMMARIZE(shopping_trends, shopping_trends[Customer ID]),
+                "PurchaseCount", 
+                    CALCULATE(
+                        COUNTROWS(shopping_trends),
+                        ALLEXCEPT(shopping_trends, shopping_trends[Customer ID])
+                    )
+            ),
+            [PurchaseCount] = 1
+        )
+    )
+)
+
+Percentage One-time Customers = DIVIDE([One-time Customers], [Total Customers], 0)
+
+Total Customer Spend = SUM(shopping_trends[Purchase Amount (USD)])
+
+Total Customers = DISTINCTCOUNT(shopping_trends[Customer ID])
+
+#############################################################################################################################
+5. Subscription Service Impact Analysis
+
+Average Previous Purchases = AVERAGE(shopping_trends[Previous Purchases])
+
+Avg Previous Purchases Non-Subscribed = CALCULATE([Average Previous Purchases], shopping_trends[Subscription Status] = "No")
+
+Avg Previous Purchases Subscribed = CALCULATE([Average Previous Purchases], shopping_trends[Subscription Status] = "Yes")
+
+Percentage Sales from Subcribed = DIVIDE([Sales from Subscribed], [Total Sales],0)
+
+Sales from Non-Subscribed = CALCULATE([Total Sales], shopping_trends[Subscription Status] = "No")
+
+Sales from Subscribed = CALCULATE([Total Sales], shopping_trends[Subscription Status] = "Yes")
+
+Cumulative Sales by Season = CALCULATE([Total Sales], FILTER(ALL(shopping_trends), shopping_trends[Season] <= MAX(shopping_trends[Season])))
+
+Min_SalesDate = MAX(('shopping_trends'[SalesDate]))
+
+Percentage Sales by Region = 
+DIVIDE(
+    CALCULATE(SUM('Shopping_Trends'[Purchase Amount (USD)]), ALLEXCEPT('Shopping_Trends', 'Shopping_Trends'[Region])),
+    SUM('Shopping_Trends'[Purchase Amount (USD)]),
+    0
+)
+
+Quantity_of_items = COUNT('shopping_trends'[Item Purchased])
+
+Total Sales by Location = SUM(shopping_trends[Purchase Amount (USD)])
+
+Total_revenue = 
+SUMX(
+    'shopping_trends',
+    1 * 'shopping_trends'[Purchase Amount (USD)]
+)
+
