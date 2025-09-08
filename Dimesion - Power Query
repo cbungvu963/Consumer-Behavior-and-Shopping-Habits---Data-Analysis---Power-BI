@@ -1,0 +1,84 @@
+# Dim_Customer
+let
+    Source = shopping_trends,
+    SelectedColumns = Table.SelectColumns(Source, {"Customer ID", "Age", "Gender", "Subscription Status", "Frequency of Purchases"}),
+    RemovedDuplicates = Table.Distinct(SelectedColumns),
+    AddedCustomerKey = Table.AddIndexColumn(RemovedDuplicates, "Customer Key", 1, 1)
+in
+
+
+#Dim_Product:
+let
+    Source = shopping_trends,
+    SelectedColumns = Table.SelectColumns(Source, {"Item Purchased", "Category", "Size", "Color"}),
+    RemovedDuplicates = Table.Distinct(SelectedColumns),
+    AddedProductKey = Table.AddIndexColumn(RemovedDuplicates, "Product Key", 1, 1)
+in
+
+#Dim_Location:
+let
+    Source = shopping_trends,
+    SelectedColumns = Table.SelectColumns(Source, {"Location"}),
+    RemovedDuplicates = Table.Distinct(SelectedColumns),
+    AddedLocationKey = Table.AddIndexColumn(RemovedDuplicates, "Location Key", 1, 1)
+in
+
+
+#Dim_Season:
+let
+    Source = shopping_trends,
+    SelectedColumns = Table.SelectColumns(Source, {"Season"}),
+    RemovedDuplicates = Table.Distinct(SelectedColumns),
+    AddedSeasonKey = Table.AddIndexColumn(RemovedDuplicates, "Season Key", 1, 1)
+in
+
+#Dim_Payment:
+let
+    Source = shopping_trends,
+    SelectedColumns = Table.SelectColumns(Source, {"Payment Method"}),
+    RemovedDuplicates = Table.Distinct(SelectedColumns),
+    AddedPaymentKey = Table.AddIndexColumn(RemovedDuplicates, "Payment Key", 1, 1)
+in
+
+#Dim_Shipping:
+let
+    Source = shopping_trends,
+    SelectedColumns = Table.SelectColumns(Source, {"Shipping Type"}),
+    RemovedDuplicates = Table.Distinct(SelectedColumns),
+    AddedShippingKey = Table.AddIndexColumn(RemovedDuplicates, "Shipping Key", 1, 1)
+in
+
+#Dim_Promotion:
+let
+    Source = shopping_trends,
+    SelectedColumns = Table.SelectColumns(Source, {"Discount Applied", "Promo Code Used"}),
+    RemovedDuplicates = Table.Distinct(SelectedColumns),
+    AddedPromotionKey = Table.AddIndexColumn(RemovedDuplicates, "Promotion Key", 1, 1)
+in
+
+#Fact_Transactions
+let
+    Source = shopping_trends,
+    AddedTransactionKey = Table.AddIndexColumn(Source, "Transaction Key", 1, 1),
+    JoinedCustomer = Table.NestedJoin(AddedTransactionKey, {"Customer ID", "Age", "Gender", "Subscription Status", "Frequency of Purchases"}, Dim_Customer, {"Customer ID", "Age", "Gender", "Subscription Status", "Frequency of Purchases"}, "CustomerJoin", JoinKind.LeftOuter),
+    ExpandedCustomer = Table.ExpandTableColumn(JoinedCustomer, "CustomerJoin", {"Customer Key"}, {"Customer Key"}),
+    JoinedProduct = Table.NestedJoin(ExpandedCustomer, {"Item Purchased", "Category", "Size", "Color"}, Dim_Product, {"Item Purchased", "Category", "Size", "Color"}, "ProductJoin", JoinKind.LeftOuter),
+    ExpandedProduct = Table.ExpandTableColumn(JoinedProduct, "ProductJoin", {"Product Key"}, {"Product Key"}),
+    JoinedLocation = Table.NestedJoin(ExpandedProduct, {"Location"}, Dim_Location, {"Location"}, "LocationJoin", JoinKind.LeftOuter),
+    ExpandedLocation = Table.ExpandTableColumn(JoinedLocation, "LocationJoin", {"Location Key"}, {"Location Key"}),
+    JoinedSeason = Table.NestedJoin(ExpandedLocation, {"Season"}, Dim_Season, {"Season"}, "SeasonJoin", JoinKind.LeftOuter),
+    ExpandedSeason = Table.ExpandTableColumn(JoinedSeason, "SeasonJoin", {"Season Key"}, {"Season Key"}),
+    JoinedPayment = Table.NestedJoin(ExpandedSeason, {"Payment Method"}, Dim_Payment, {"Payment Method"}, "PaymentJoin", JoinKind.LeftOuter),
+    ExpandedPayment = Table.ExpandTableColumn(JoinedPayment, "PaymentJoin", {"Payment Key"}, {"Payment Key"}),
+    JoinedShipping = Table.NestedJoin(ExpandedPayment, {"Shipping Type"}, Dim_Shipping, {"Shipping Type"}, "ShippingJoin", JoinKind.LeftOuter),
+    ExpandedShipping = Table.ExpandTableColumn(JoinedShipping, "ShippingJoin", {"Shipping Key"}, {"Shipping Key"}),
+
+    JoinedPromotion = Table.NestedJoin(ExpandedShipping, {"Discount Applied", "Promo Code Used"}, Dim_Promotion, {"Discount Applied", "Promo Code Used"}, "PromotionJoin", JoinKind.LeftOuter),
+    ExpandedPromotion = Table.ExpandTableColumn(JoinedPromotion, "PromotionJoin", {"Promotion Key"}, {"Promotion Key"}),
+    SelectedColumns = Table.SelectColumns(ExpandedPromotion, {"Transaction Key", "Customer Key", "Product Key", "Location Key", "Season Key", "Payment Key", "Shipping Key", "Promotion Key", "Purchase Amount (USD)", "Review Rating", "Previous Purchases"}),
+    SetDataTypes = Table.TransformColumnTypes(SelectedColumns, {
+        {"Purchase Amount (USD)", type number},
+        {"Review Rating", type number},
+        {"Previous Purchases", Int64.Type}
+    })
+in
